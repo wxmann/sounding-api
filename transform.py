@@ -1,13 +1,12 @@
-import pandas as pd
 import numpy as np
-from functools import wraps
 
-def convert_ser(ser):
+
+def dictify_ser(ser):
     ret = ser.to_dict()
     return _fix_jsonification(ret)
 
 
-def convert_df(df):
+def dictify_df(df):
     ret = df.to_dict('records')
 
     if isinstance(ret, list):

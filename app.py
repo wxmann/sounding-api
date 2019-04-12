@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS, cross_origin
+from flask_cors import cross_origin
 
 from datetime import datetime
 
 from sounding import getsounding
-from conversion import convert_df, convert_ser
+from transform import dictify_df, dictify_ser
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -28,8 +28,8 @@ def route():
 
     info, data = getsounding(ts, station)
     response_dict = {
-        'info': convert_ser(info),
-        'data': convert_df(data)
+        'info': dictify_ser(info),
+        'data': dictify_df(data)
     }
 
     response = jsonify(response_dict)
