@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
+
 from datetime import datetime
+
 from sounding import getsounding
 from conversion import convert_df, convert_ser
 
@@ -13,6 +16,7 @@ def health():
 
 
 @app.route('/sounding', methods=['GET'])
+@cross_origin()
 def route():
     year = request.args.get('year')
     month = request.args.get('month')
