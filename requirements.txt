@@ -3,3 +3,5 @@ Flask-Cors>=3.0.7
 numpy>=1.16.2
 pandas>=0.24.2
 siphon>=0.8.0
+metpy>=0.10.0
+pint==0.8.1
