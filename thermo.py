@@ -1,5 +1,8 @@
 from collections import namedtuple
 
+# this monkey patch fixes the LFC calculation
+from monkey_patch import *
+
 import metpy.calc as mpcalc
 from metpy.units import units
 import numpy as np
@@ -27,7 +30,7 @@ def virtualtemp(p, T, Td):
 
     # in a perfect world we're done here, but in many raobs the dewpoint data at higher altitudes
     # is missing. Fortunately the virtual temperature correction is on order of ~0.2 K or less
-    # above 500mb. So we fill in the original temperature for missing VT's above that level.
+    # for low mixing ratios at high altitudes.
     vt_corrected = np.where((np.isnan(vt_raw.magnitude) & (p_hpa.magnitude < 500)), Tk, vt_raw)
     return Quantity(vt_corrected, 'kelvin')
 
@@ -56,7 +59,6 @@ class Parcel(object):
         self._parcelp_vt, self._parcelT_vt = self._parcel_vt_correct()
         Tvirt = virtualtemp(self._parcelp, Twithlcl, Tdwithlcl)
 
-        # TODO: apply LFC patch when LFC is unbounded
         self._cape_vt, self._cin_vt = mpcalc.cape_cin(self._parcelp, Tvirt, Tdwithlcl, self._parcelT_vt)
         self._lfcp_vt, self._lfcT_vt = mpcalc.lfc(self._parcelp, Tvirt, Tdwithlcl, self._parcelT_vt)
         self._elp_vt, self._elT_vt = mpcalc.el(self._parcelp, Tvirt, Tdwithlcl, self._parcelT_vt)
