@@ -1,10 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import cross_origin
 
-from datetime import datetime
-
-from sounding import getsounding
-from transform import dictify_df, dictify_ser
+import handlers
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -17,22 +14,26 @@ def health():
 
 @app.route('/sounding', methods=['GET'])
 @cross_origin()
-def route():
+def sounding_route():
     year = request.args.get('year')
     month = request.args.get('month')
     day = request.args.get('day')
     hour = request.args.get('hour')
-    ts = datetime(year=int(year), month=int(month), day=int(day), hour=int(hour))
-
     station = request.args.get('station')
 
-    info, data = getsounding(ts, station)
-    response_dict = {
-        'info': dictify_ser(info),
-        'data': dictify_df(data)
-    }
+    response_body = handlers.sounding_handler(year, month, day, hour, station)
+    response = jsonify(response_body)
+    response.status_code = 200
+    return response
 
-    response = jsonify(response_dict)
+
+@app.route('/params', methods=['POST'])
+@cross_origin()
+def params_route():
+    soundingdata = request.get_json()
+
+    response_body = handlers.parameter_handler(soundingdata)
+    response = jsonify(response_body)
     response.status_code = 200
     return response
 

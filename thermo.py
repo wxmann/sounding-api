@@ -12,6 +12,17 @@ Quantity = units.Quantity
 Ob = namedtuple('Ob', ['p', 'T'])
 
 
+def extract_env_profile(sounding_df):
+    non_nan_thermo = sounding_df.temperature.notnull()
+    df_filtered = sounding_df[non_nan_thermo]
+
+    p = df_filtered['pressure'].values * units.hPa
+    T = df_filtered['temperature'].values * units.degC
+    Td = df_filtered['dewpoint'].values * units.degC
+
+    return p, T, Td
+
+
 def sbparcel(p, T, Td):
     p0, T0, Td0 = p[0], T[0], Td[0]
     return Parcel(p, T, Td, p0, T0, Td0)
@@ -97,6 +108,9 @@ class Parcel(object):
 
     def cin(self):
         return self._cin
+
+    def profile_vt(self, pres_unit='hPa', temp_unit='degC'):
+        return Ob(p=self._parcelp_vt.to(pres_unit), T=self._parcelT_vt.to(temp_unit))
 
     def lfc_vt(self, pres_unit='hPa', temp_unit='degC'):
         return Ob(p=self._lfcp_vt.to(pres_unit), T=self._lfcT_vt.to(temp_unit))
