@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import numpy as np
 import pandas as pd
 
 from sounding import getsounding
@@ -23,10 +24,23 @@ def parameter_handler(soundingdata):
     p, T, Td = extract_env_profile(df)
     sb = _parcel_info(sbparcel(p, T, Td))
     ml = _parcel_info(mlparcel(p, T, Td))
-    return {
+    ret = {
         'sb_parcel': sb,
         'ml_parcel': ml
     }
+    return _recursively_convert_nans(ret)
+
+
+def _recursively_convert_nans(obj):
+    if isinstance(obj, dict):
+        return {k: _recursively_convert_nans(v) for k, v in obj.items()}
+    elif np.isscalar(obj):
+        if np.isnan(obj):
+            return None
+        return obj
+    else:
+        # assume list
+        return list(_recursively_convert_nans(subobj) for subobj in obj)
 
 
 def _parcel_info(parcel):
