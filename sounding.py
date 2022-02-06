@@ -1,47 +1,39 @@
 from functools import lru_cache
 
 import numpy as np
-
-from siphon.simplewebservice.iastate import IAStateUpperAir
+import pandas as pd
 from siphon.simplewebservice.wyoming import WyomingUpperAir
 
-_PRIMARY_CONUS_STATIONS = {
-    'UIL', 'SLE', 'MFR', 'OTX', 'BOI',  # WA/OR/ID
-    'OAK', 'VBG', 'NKX', 'EDW',   # CA
-    'REV', 'VEF', 'LKN', 'SLC'    # NV, Great Basin
-    'TFW', 'GGW', 'RIW',   # MT/WY
-    'FGW', 'TUS', 'ABQ', 'GJT', 'DNR',  # AZ/CO/NM
-    'BIS', 'ABR', 'UNR', 'LBF', 'OAX',  # Northern Plains (ND/SD/NE)
-    'DDC', 'TOP', 'OUN',  # Central/South Plains (OK/KS)
-    'AMA', 'MAF', 'EPZ', 'DRT', 'FWD', 'CRP', 'BRO',   # TX
-    'INL', 'MPX', 'GRB', 'DVN',   # MN/WI/IA
-    'SGF', 'LZK', 'SHV', 'LCH', 'SIL',  # MO/AR/LA
-    'ILX', 'ILN', 'APX', 'DTX',   # upper midwest (IL/IN/MI/OH)
-    'JAN', 'BMX', 'BNA', 'FFC',   # dixie (MS/AL/GA/TN)
-    'BUF', 'PIT', 'ALB', 'OKX',   # NY/PA/NJ
-    'GYX', 'CAR', 'CHH',   # New England
-    'IAD', 'WAL', 'RNK',   # Mid-Atlantic
-    'GSO', 'MHX', 'CHS',   # Carolinas
-    'TLH', 'JAX', 'XMR', 'TBW', 'MFL', 'EYW'  # FL
-}
+_DATA_FIELDS = [
+    'pressure', 'height', 'temperature', 'dewpoint',
+    'wind_dir', 'wind_speed'
+]
 
-def requestiowa(date, station):
-    return IAStateUpperAir.request_data(date, station)
+_META_FIELDS = [
+    'latitude', 'longitude', 'elevation',
+    'station', 'station_number'
+]
 
 
-def requestwyoming(date, station):
-    return WyomingUpperAir.request_data(date, station)
+def get_sounding(ts, site):
+    df = get_sounding_df(ts, site)
+    metadata = df.iloc[0][_META_FIELDS]
+    metadata_dict = metadata.to_dict()
+    data_dict = {
+        'profile': df[_DATA_FIELDS].to_dict('records')
+    }
+    return metadata_dict | data_dict
 
 
 @lru_cache()
-def getsounding(date, station):
-    station = station.upper()
-    if station in _PRIMARY_CONUS_STATIONS:
-        df = requestiowa(date, station)
-    else:
-        df = requestwyoming(date, station)
+def get_sounding_df(ts, site):
+    requester = WyomingUpperAir()
+    df = requester.request_data(time=pd.Timestamp(ts), site_id=site)
 
-    df_munged = df.replace({np.nan: None})
-    metadata = df_munged.iloc[0][['station', 'time']]
-    df_ret = df_munged[['pressure', 'height', 'temperature', 'dewpoint', 'direction', 'speed', 'u_wind', 'v_wind']]
-    return metadata, df_ret
+    return df.rename(columns={
+        'direction': 'wind_dir',
+        'speed': 'wind_speed'
+    }).replace({
+        np.nan: None,
+        np.inf: None
+    })
