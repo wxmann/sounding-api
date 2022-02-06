@@ -15,18 +15,17 @@ _META_FIELDS = [
 ]
 
 
-def get_sounding(ts, site):
-    df = get_sounding_df(ts, site)
-    metadata = df.iloc[0][_META_FIELDS]
+def to_dict(sounding_df):
+    metadata = sounding_df.iloc[0][_META_FIELDS]
     metadata_dict = metadata.to_dict()
     data_dict = {
-        'profile': df[_DATA_FIELDS].to_dict('records')
+        'profile': sounding_df[_DATA_FIELDS].to_dict('records')
     }
     return metadata_dict | data_dict
 
 
 @lru_cache()
-def get_sounding_df(ts, site):
+def get_sounding(ts, site, fill_value=None):
     requester = WyomingUpperAir()
     df = requester.request_data(time=pd.Timestamp(ts), site_id=site)
 
@@ -34,6 +33,6 @@ def get_sounding_df(ts, site):
         'direction': 'wind_dir',
         'speed': 'wind_speed'
     }).replace({
-        np.nan: None,
-        np.inf: None
+        np.nan: fill_value,
+        np.inf: fill_value
     })

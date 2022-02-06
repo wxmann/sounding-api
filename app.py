@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Response, status
 
-from sounding import get_sounding
+from sounding import get_sounding, to_dict
 
 app = FastAPI()
 
@@ -12,9 +12,11 @@ def health():
 
 @app.get('/sounding')
 def sounding(date: str, hour: int, station: str, response: Response):
-    dt = f'{date} {hour}'
+    dt = f'{date} {str(hour).zfill(2)}:00'
     try:
-        return get_sounding(dt, station)
+        sounding = get_sounding(dt, station)
+        # params = get_params(sounding)
+        return to_dict(sounding) # | { 'params': params }
     except ValueError as e:
         error_str = str(e).lower()
         if 'could not convert string' in error_str:
@@ -25,6 +27,6 @@ def sounding(date: str, hour: int, station: str, response: Response):
         elif 'no data available' in error_str:
             response.status_code = status.HTTP_404_NOT_FOUND
             return {
-                'error': f'no data for {station} at {date} {hour}:00'
+                'error': f'no data for {station} at {dt}'
             }
         raise e
