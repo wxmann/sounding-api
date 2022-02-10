@@ -6,7 +6,7 @@ from siphon.simplewebservice.wyoming import WyomingUpperAir
 
 _DATA_FIELDS = [
     'pressure', 'height', 'temperature', 'dewpoint',
-    'wind_dir', 'wind_speed'
+    'direction', 'speed', 'u_wind', 'v_wind'
 ]
 
 _META_FIELDS = [
@@ -29,10 +29,7 @@ def get_sounding(ts, site, fill_value=None):
     requester = WyomingUpperAir()
     df = requester.request_data(time=pd.Timestamp(ts), site_id=site)
 
-    return df.rename(columns={
-        'direction': 'wind_dir',
-        'speed': 'wind_speed'
-    }).replace({
+    return df.replace({
         np.nan: fill_value,
         np.inf: fill_value
     })
